@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!-- saved from url=(0029)https://www.an2.net/py/zi.php -->
+<html lang="zh">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>看拼音写汉字、看拼音写词语</title>
+  <style>
+    @font-face {
+      font-family: 'hy-py';
+      src: url('py.woff2') format('woff2'), url('py.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'web-ukai';
+      src: url('UKaiCN.woff2') format('woff2'), url('UKaiCN.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'web-fz';
+      src: url('fz.woff2') format('woff2'), url('fz.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'web-pzh';
+      src: url('pzh.woff2') format('woff2'), url('pzh.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'web-tyz';
+      src: url('tyz.woff2') format('woff2'), url('tyz.woff') format('woff');
+    }
+
+    body,
+    div,
+    p,
+    ul,
+    li {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    div {
+      width: 958px;
+      margin: 0 auto;
+      padding-left: 2px;
+    }
+
+    div.btn {
+      text-align: center;
+      height: 60px;
+      line-height: 50px;
+    }
+
+    div.btn span {
+      width: 88px;
+      height: 33px;
+      font-size: 18px;
+      background: #eee;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+
+    .input {
+      width: 360px;
+      height: 26px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      padding: 1px 6px;
+    }
+
+    li {
+      display: inline-block;
+      height: 100px;
+    }
+
+    li span.py {
+      display: inline-block;
+      width: 52px;
+      height: 32px;
+      font-family: "hy-py", "宋体", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      line-height: 32px;
+      font-size: 18px;
+    }
+
+    li span.tzg {
+      display: inline-block;
+      font-family: "楷体", "楷体_gb2312", "Kaiti SC", "STKaiti", "AR PL UKai CN", "AR PL UKai HK", "AR PL UKai TW", "AR PL UKai TW MBE",
+        "AR PL KaitiM GB", "KaiTi", "KaiTi_GB2312", "DFKai-SB", "TW\-Kai", "web-fz", serif;
+      font-size: 34px;
+      line-height: 50px;
+      text-align: center;
+      width: 52px;
+      height: 52px;
+      background: url(bg12.svg) center center / contain;
+      color: #b8b8b8;
+    }
+
+    .page-head {
+      height: 116px;
+      line-height: 136px;
+      font-size: 32px;
+      text-align: center;
+      display: block;
+    }
+
+    .do-not-print {
+      display: block;
+    }
+
+    textarea {
+      width: 950px;
+      height: 120px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+    }
+
+    @media print {
+      .do-not-print {
+        display: none;
+      }
+
+      body {
+        -webkit-print-color-adjust: exact;
+        -moz-print-color-adjust: exact;
+        -ms-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    @page {
+      size: auto;
+      margin: 5mm 16mm 5mm 16mm;
+    }
+  </style>
+
+</head>
+
+<body style="zoom: 1;">
+  <form action="" method="post" target="_blank" id="tzg-form" style="height: auto !important;" class="do-not-print">
+    <div id="prompt">
+      <h3>请输入想要生成的汉字（词语之间用逗号或空格隔开）：</h3>
+    </div>
+    <div>
+      <textarea name="hz" id="hzbox">霜降,吹落,飘雪,游鱼,泳池,飞入,春风,冬天,凉风,花朵</textarea>
+    </div>
+    <div id="py-div">
+      <div id="prompt">
+        <h3>汉字对应的拼音：（如果不正确请手动修改）</h3>
+      </div>
+      <textarea name="py" id="pybox"></textarea>
+    </div>
+    <div>自定义页头：<input type="text" name="tzgbt" value="生字默写" class="input" id="py-title"></div>
+    <div class="btn"><span id="hz-btn">生成拼音</span> <span id="py-btn" style="display: none;">确认生成</span></div>
+  </form>
+
+  <div class="do-not-print" style="color: #cd2e2e; text-align: center;">预览</div>
+  <hr class="do-not-print" />
+
+  <div class="page-head" style="color: rgb(102, 102, 102);">生字默写</div>
+  <div>
+    <ul id="py-list"></ul>
+  </div>
+
+  <script type="text/javascript" src="./jquery-1.9.0.min.js"></script>
+  <script type="text/javascript" src="./pinyin-pro.js"></script>
+  <script type="text/javascript">
+    function convert() {
+      var hz = $("#hzbox").val() || '';
+      if (!hz.trim()) {
+        alert("请输入想要生成的汉字！"); return;
+      }
+      $("#py-btn").hide();
+      var { pinyin } = pinyinPro;
+      var py = (pinyin(hz.trim().replace(/(\s+)/g, ',')) || '').trim().replace(/ *, */g, ',').replace(/ +/g, '-');
+      if (py.length > 0) {
+        $("#pybox").val(py);
+        $("#py-div").show();
+        $("#py-btn").show();
+        render();
+      } else {
+        alert("转化为拼音失败"); return;
+      }
+    }
+
+    function render() {
+      $(".page-head").text($("#py-title").val())
+      $("#py-list").empty()
+      var py = $("#pybox").val();
+      if (py.length == 0) return;
+      var words = py.split(',');
+      var children = ''
+      for (var i = 0; i < words.length; ++i) {
+        var w = words[i].trim();
+        if (w.length == 0) continue;
+        var chars = w.split('-')
+        var li = `<li style="width: ${chars.length * 56}px">`;
+        chars.forEach((c) => {
+          li += `<span class="py">${c.trim()}</span>`;
+        });
+        chars.forEach((c) => {
+          li += '<span class="tzg">&nbsp;</span>'
+        });
+        li += '</li>\n';
+        children += li;
+      }
+      if (children.length > 0) {
+        $("#py-list").append(children);
+      }
+    }
+
+    $(function () {
+      $("#hz-btn").on("click", convert);
+      $("#py-btn").on("click", function () {
+        render();
+        setTimeout(function () { window.print(); }, 1000);
+      });
+    });
+
+    window.onload = function () {
+      render();
+    }
+  </script>
+</body>
+
+</html>
